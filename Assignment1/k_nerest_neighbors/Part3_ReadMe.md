@@ -28,6 +28,7 @@
         实现 cosine
     - `knn_predict(X_test, X_train, y_train, k, metric, mode)`：
         基于距离的多数表决输出类别
+        平票返回最小标签
     - `select_k_by_validation(X_train, y_train, X_val, y_val, ks, metric, mode)`：
         在 ks 上网格搜索并返回 (best_k, accs)
 

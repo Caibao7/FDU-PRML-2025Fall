@@ -1,49 +1,17 @@
-import os, numpy as np
+import os
+import numpy as np
 from sklearn.datasets import make_blobs
 from sklearn.model_selection import train_test_split
 
-DATA_DIR = "./input_knn"
-os.makedirs(DATA_DIR, exist_ok=True)
-
-# ---- 数据规模与难度（可按需微调）----
-RANDOM_STATE = 42
-N_SAMPLES    = 300      # 200-400
-N_CLASSES    = 4        # 4 类
-CLUSTER_STD  = 3        # 数值越大，类间越模糊 [2.5, 3, 3.5, 4]
-TEST_SIZE    = 0.25
-VAL_SIZE     = 0.25
-
-# ---- 生成 2D 多类别数据（适合决策边界可视化）----
-X, y = make_blobs(n_samples=N_SAMPLES,
-                  centers=N_CLASSES,
-                  n_features=2,
-                  cluster_std=CLUSTER_STD,
-                  random_state=RANDOM_STATE)
-X = X.astype(np.float64)
-y = y.astype(np.int64)  # 标签为 0..C-1
-
-# ---- 分割：train / val / test ≈ 100 / 50 / 50 ----
-X_train, X_rest, y_train, y_rest = train_test_split(
-    X, y, test_size=(TEST_SIZE + VAL_SIZE),
-    random_state=RANDOM_STATE, stratify=y
-)
-rel_test = TEST_SIZE / (TEST_SIZE + VAL_SIZE)
-X_val, X_test, y_val, y_test = train_test_split(
-    X_rest, y_rest, test_size=rel_test,
-    random_state=RANDOM_STATE, stratify=y_rest
-)
-
-# ---- 保存 ----
-for name, arr in [
-    ("X_train.npy", X_train), ("y_train.npy", y_train),
-    ("X_val.npy",   X_val),   ("y_val.npy",   y_val),
-    ("X_test.npy",  X_test),  ("y_test.npy",  y_test),
-]:
-    np.save(os.path.join(DATA_DIR, name), arr)
-
-print(f"[OK] Saved to {DATA_DIR}")
-print(f"train={X_train.shape[0]}, val={X_val.shape[0]}, test={X_test.shape[0]}, D={X_train.shape[1]}, classes={len(np.unique(y))}")
-
+# ===================== 可调参数 =====================
+DATA_DIR     = "./input_knn"    # 输入数据目录
+RANDOM_STATE = 42               # 随机种子
+N_SAMPLES    = 500              # 样本总数
+N_CLASSES    = 4                # 类别数 （在boundary图上会有几个色块）
+CLUSTER_STD  = 4.0              # 类内标准差（数据难度）
+TEST_SIZE    = 0.25             # 测试集比例    
+VAL_SIZE     = 0.25             # 验证集比例
+# ===================================================
 
 REQUIRED_FILES = [
     "X_train.npy", "y_train.npy",
@@ -51,33 +19,91 @@ REQUIRED_FILES = [
     "X_test.npy",  "y_test.npy",
 ]
 
+def _summary(X_tr, y_tr, X_val, y_val, X_te, y_te):
+    print(f"[DATA] train={len(X_tr)}, val={len(X_val)}, test={len(X_te)}, "
+          f"D={X_tr.shape[1]}, classes={len(np.unique(y_tr))}")
+
+def generate_and_save(
+    data_dir: str = DATA_DIR,
+    n_samples: int = N_SAMPLES,
+    n_classes: int = N_CLASSES,
+    cluster_std: float = CLUSTER_STD,
+    test_size: float = TEST_SIZE,
+    val_size: float = VAL_SIZE,
+    random_state: int = RANDOM_STATE,
+    force: bool = True,
+) -> None:
+    """
+    生成数据并保存到 data_dir；默认 force=True（覆盖同名文件）。
+    若不想每次都覆盖，可传 force=False（存在就跳过）。
+    """
+    os.makedirs(data_dir, exist_ok=True)
+    paths = [os.path.join(data_dir, f) for f in REQUIRED_FILES]
+
+    if (not force) and all(os.path.exists(p) for p in paths):
+        print(f"[Skip] Found existing dataset in {data_dir}")
+        # 打印概要，便于日志比对
+        X_tr = np.load(os.path.join(data_dir, "X_train.npy"))
+        y_tr = np.load(os.path.join(data_dir, "y_train.npy"))
+        X_val = np.load(os.path.join(data_dir, "X_val.npy"))
+        y_val = np.load(os.path.join(data_dir, "y_val.npy"))
+        X_te = np.load(os.path.join(data_dir, "X_test.npy"))
+        y_te = np.load(os.path.join(data_dir, "y_test.npy"))
+        _summary(X_tr, y_tr, X_val, y_val, X_te, y_te)
+        return
+
+    # 1) 生成原始数据
+    X, y = make_blobs(
+        n_samples=n_samples,
+        centers=n_classes,
+        n_features=2,
+        cluster_std=cluster_std,
+        random_state=random_state,
+    )
+    X = X.astype(np.float64)
+    y = y.astype(np.int64)
+
+    # 2) train / (val+test)
+    X_tr, X_rest, y_tr, y_rest = train_test_split(
+        X, y,
+        test_size=(test_size + val_size),
+        random_state=random_state,
+        stratify=y,
+    )
+
+    # 3) 在剩余部分里按比例切 val / test
+    rel_test = test_size / (test_size + val_size)
+    X_val, X_te, y_val, y_te = train_test_split(
+        X_rest, y_rest,
+        test_size=rel_test,
+        random_state=random_state,
+        stratify=y_rest,
+    )
+
+    # 4) 保存
+    np.save(os.path.join(data_dir, "X_train.npy"), X_tr)
+    np.save(os.path.join(data_dir, "y_train.npy"), y_tr)
+    np.save(os.path.join(data_dir, "X_val.npy"),   X_val)
+    np.save(os.path.join(data_dir, "y_val.npy"),   y_val)
+    np.save(os.path.join(data_dir, "X_test.npy"),  X_te)
+    np.save(os.path.join(data_dir, "y_test.npy"),  y_te)
+
+    print(f"[OK] Saved dataset to {data_dir} (seed={random_state})")
+    _summary(X_tr, y_tr, X_val, y_val, X_te, y_te)
+
 def load_prepared_dataset(data_dir: str = DATA_DIR):
     """
-    从 data_dir 读取预先保存的 KNN 数据集（.npy），并做最小必要校验。
-    期望文件：
-      X_train.npy, y_train.npy, X_val.npy, y_val.npy, X_test.npy, y_test.npy
-    返回：X_train, y_train, X_val, y_val, X_test, y_test
+    仅负责读取准备好的数据
+    test_knn.py / knn_student.py 直接调用该函数。
     """
-    paths = {name: os.path.join(data_dir, name) for name in REQUIRED_FILES}
-    missing = [p for p in paths.values() if not os.path.exists(p)]
-    if missing:
-        raise FileNotFoundError(f"Missing dataset files: {missing}")
+    X_tr = np.load(os.path.join(data_dir, "X_train.npy"))
+    y_tr = np.load(os.path.join(data_dir, "y_train.npy"))
+    X_val = np.load(os.path.join(data_dir, "X_val.npy"))
+    y_val = np.load(os.path.join(data_dir, "y_val.npy"))
+    X_te = np.load(os.path.join(data_dir, "X_test.npy"))
+    y_te = np.load(os.path.join(data_dir, "y_test.npy"))
+    return X_tr, y_tr, X_val, y_val, X_te, y_te
 
-    X_train = np.load(paths["X_train.npy"]).astype(np.float64)
-    y_train = np.load(paths["y_train.npy"]).astype(int).reshape(-1)
-
-    X_val   = np.load(paths["X_val.npy"]).astype(np.float64)
-    y_val   = np.load(paths["y_val.npy"]).astype(int).reshape(-1)
-
-    X_test  = np.load(paths["X_test.npy"]).astype(np.float64)
-    y_test  = np.load(paths["y_test.npy"]).astype(int).reshape(-1)
-
-    # 基本一致性检查（简洁为主）
-    assert X_train.shape[0] == y_train.shape[0], "train size mismatch"
-    assert X_val.shape[0]   == y_val.shape[0],   "val size mismatch"
-    assert X_test.shape[0]  == y_test.shape[0],  "test size mismatch"
-    D = X_train.shape[1]
-    assert X_val.shape[1] == D and X_test.shape[1] == D, "feature dim mismatch across splits"
-
-    print(f"[Load] train={X_train.shape[0]} | val={X_val.shape[0]} | test={X_test.shape[0]} | D={D}")
-    return X_train, y_train, X_val, y_val, X_test, y_test
+if __name__ == "__main__":
+    # 只有“直接运行 data_generate.py”时才会生成数据
+    generate_and_save(force=True)

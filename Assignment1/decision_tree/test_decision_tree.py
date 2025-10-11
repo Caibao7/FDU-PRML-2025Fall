@@ -2,9 +2,7 @@
 decision tree test
 """
 
-import numpy as np
 import pandas as pd
-from numpy.testing import assert_array_equal
 from decision_tree import DecisionTreeClassifier
 from viz_tree import plot_tree
 import matplotlib.pyplot as plt

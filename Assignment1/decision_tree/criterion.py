@@ -1,9 +1,7 @@
 """
 criterion
 """
-
 import math
-
 
 def get_criterion_function(criterion):
     if criterion == "info_gain":
@@ -44,7 +42,7 @@ def __info_gain(y, l_y, r_y):
     y, l_y, r_y: label array of father node, left child node, right child node
     """
     all_labels, left_labels, right_labels = __label_stat(y, l_y, r_y)
-
+    info_gain = 0.0
     ###########################################################################
     # TODO:                                                                   #
     # Implement this method. Calculate the info gain if splitting y into      #
@@ -53,7 +51,7 @@ def __info_gain(y, l_y, r_y):
     # *****START OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
 
     # *****END OF YOUR CODE (DO NOT DELETE/MODIFY THIS LINE)*****
-
+    
     return info_gain
 
 
@@ -82,6 +80,8 @@ def __gini_index(y, l_y, r_y):
     y, l_y, r_y: label array of father node, left child node, right child node
     """
     all_labels, left_labels, right_labels = __label_stat(y, l_y, r_y)
+    before = 0.0
+    after = 0.0
 
     ###########################################################################
     # TODO:                                                                   #
@@ -97,6 +97,8 @@ def __gini_index(y, l_y, r_y):
 def __error_rate(y, l_y, r_y):
     """Calculate the error rate"""
     all_labels, left_labels, right_labels = __label_stat(y, l_y, r_y)
+    before = 0.0
+    after = 0.0
 
     ###########################################################################
     # TODO:                                                                   #

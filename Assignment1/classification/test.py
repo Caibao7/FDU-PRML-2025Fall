@@ -1,6 +1,12 @@
 import numpy as np
-import accuracy_error_groundtruth as acc_err      # accuracy / MSE
-import evaluation_metrics_grountruth as eval        # precision / recall / f1
+import accuracy_error as acc_err      # accuracy / MSE
+import evaluation_metrics as eval        # precision / recall / f1
+from datetime import datetime
+
+# ============== 学生信息（请填写） ==============
+STUDENT_NAME = "张三"   # 例如：张三
+STUDENT_ID   = "2025123456"   # 例如：2025123456
+# ==============================================
 
 def test_basic():
     print("[BASIC] accuracy / MSE")
@@ -23,7 +29,7 @@ def test_basic():
         print(" - mse NOT IMPLEMENTED")
 
 def test_eval():
-    print("\n[PRF] precision / recall / f1 (binary)")
+    print("[PRF] precision / recall / f1 (binary)")
     # y_true=[1,1,0,0], y_pred=[1,0,1,0]
     # tp=1, fp=1, fn=1, tn=1 -> P=0.5, R=0.5, F1=0.5
     ytb = np.array([1, 1, 0, 0])
@@ -41,6 +47,17 @@ def test_eval():
     except NotImplementedError:
         print(" - PRF NOT IMPLEMENTED")
 
+def _print_header():
+    name, sid = STUDENT_NAME, STUDENT_ID
+    ts = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    print("=" * 60)
+    print("实验：Part 1 - 分类评测指标")
+    print(f"姓名：{name}    学号：{sid}")
+    print(f"时间：{ts}")
+    print("=" * 60)
+    return name, sid
+
 if __name__ == "__main__":
+    _print_header()
     test_basic()
     test_eval()
