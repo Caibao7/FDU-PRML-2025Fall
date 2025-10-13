@@ -9,8 +9,8 @@ from data_generate import load_prepared_dataset
 from datetime import datetime
 
 # === 学生信息 ===
-STUDENT_NAME = "张三"
-STUDENT_ID   = "2025123456"
+STUDENT_NAME = "CaiYiyang"
+STUDENT_ID   = "23307130258"
 # ================
 
 def _almost_equal(a, b, tol=1e-9):
